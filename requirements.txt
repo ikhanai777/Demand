@@ -1,0 +1,4 @@
+requests>=2.28
+# optional
+# anthropic>=1.0            # --llm anthropic
+# google-play-scraper>=1.2  # Google Play reviews source
