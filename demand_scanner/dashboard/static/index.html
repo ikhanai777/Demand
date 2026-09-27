@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demand Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M7 22l6-7 5 4 7-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --page:#f9f9f7;--surface:#fcfcfb;--panel:#ffffff;--ink:#0b0b0b;--ink-2:#52514e;--muted:#898781;
+  --grid:#e1e0d9;--axis:#c3c2b7;--line:#e7e6e0;--accent:#2a78d6;--accent-soft:#cde2fb;--track:#eeede8;
+  --hot:#eb6834;--strong:#2a78d6;--promising:#1baf7a;--weak:#898781;--danger:#d03b3b;--ok:#006300;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --page:#0d0d0d;--surface:#1a1a19;--panel:#161615;--ink:#ffffff;--ink-2:#c3c2b7;--muted:#898781;
+  --grid:#2c2c2a;--axis:#383835;--line:#2a2a28;--accent:#3987e5;--accent-soft:#184f95;--track:#262624;
+  --hot:#d95926;--strong:#3987e5;--promising:#199e70;--ok:#0ca30c;--shadow:none}}
+:root[data-theme="dark"]{
+  --page:#0d0d0d;--surface:#1a1a19;--panel:#161615;--ink:#ffffff;--ink-2:#c3c2b7;--muted:#898781;
+  --grid:#2c2c2a;--axis:#383835;--line:#2a2a28;--accent:#3987e5;--accent-soft:#184f95;--track:#262624;
+  --hot:#d95926;--strong:#3987e5;--promising:#199e70;--ok:#0ca30c;--shadow:none}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+button,input,select{font:inherit;color:inherit}
+.top{position:sticky;top:0;z-index:5;background:var(--page);border-bottom:1px solid var(--line)}
+.top .in{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:16px;color:var(--ink)}
+.brand svg{flex:none}
+nav{display:flex;gap:4px;margin-left:8px}
+nav a{padding:6px 10px;border-radius:8px;color:var(--ink-2)}nav a.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);text-decoration:none}
+.sp{flex:1}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 9px;cursor:pointer;color:var(--ink-2)}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:24px;margin:0 0 2px;font-weight:650;overflow-wrap:anywhere}h2{font-size:16px;margin:0 0 12px;font-weight:650}
+.sub{color:var(--muted);margin:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.row{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin:16px 0}
+.kpi .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .s{color:var(--ink-2);font-size:12.5px}
+.two{grid-template-columns:2fr 1fr}@media(max-width:860px){.two{grid-template-columns:1fr}}
+.grade{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650;letter-spacing:.05em;color:var(--ink-2)}
+.grade i{width:8px;height:8px;border-radius:50%;background:var(--weak)}
+.grade.HOT i{background:var(--hot)}.grade.STRONG i{background:var(--strong)}.grade.PROMISING i{background:var(--promising)}
+.scorebar{display:flex;align-items:center;gap:8px;min-width:130px}
+.scorebar .t{flex:1;height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.scorebar .f{height:100%;background:var(--accent);border-radius:3px}
+.scorebar b{font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--surface)}
+.tw{overflow-x:auto}
+.muted{color:var(--muted)}.small{font-size:12.5px}
+.chip{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 4px 2px 0;color:var(--ink-2);background:var(--surface)}
+.chip.a{border-color:var(--accent);color:var(--ink)}
+.form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.form input[type=text]{flex:1 1 260px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.form input[type=text]:focus{outline:2px solid var(--accent);outline-offset:-1px}
+select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.5;cursor:default}.btn.ghost{background:none;color:var(--accent);border:1px solid var(--line)}
+.btn.sm{padding:6px 10px;font-size:13px}
+label.ck{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);cursor:pointer}
+details.adv summary{cursor:pointer;color:var(--ink-2);margin-top:10px}
+.srcgrid{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+.job{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.job pre{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12px;max-height:160px;overflow:auto;white-space:pre-wrap;margin:6px 0 0}
+.status{font-size:12px;font-weight:600}.status.running,.status.queued{color:var(--accent)}.status.done{color:var(--ok)}.status.failed{color:var(--danger)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-width:0;flex:1 1 180px}
+.pp-detail td{background:var(--surface)}
+.comp{display:grid;grid-template-columns:96px 1fr 40px;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.comp .t{height:6px;background:var(--track);border-radius:3px}.comp .f{height:6px;background:var(--accent);border-radius:3px}
+.comp span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.detail-grid{display:grid;grid-template-columns:260px 1fr;gap:20px}@media(max-width:760px){.detail-grid{grid-template-columns:1fr}}
+.quote{border-left:3px solid var(--accent-soft);padding:2px 0 2px 10px;margin:8px 0;overflow-wrap:anywhere}
+.quote .m{font-size:12px;color:var(--muted)}
+.sol{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:var(--panel)}
+.sol b{display:block}.sol ul{margin:6px 0 0;padding-left:18px}
+.chart{position:relative}.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;box-shadow:var(--shadow);white-space:nowrap;display:none}
+.empty{text-align:center;padding:48px 16px;color:var(--ink-2)}
+.empty code,code{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12.5px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:8px 14px;border-radius:8px;display:none;z-index:9}
+.lede{font-size:15px;color:var(--ink-2);margin:12px 0 0}
+.hdr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:560px){nav a{padding:6px 7px}.brand span{display:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <a class="brand" href="#/"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M7 22l6-7 5 4 7-9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Demand Dashboard</span></a>
+  <nav><a href="#/" data-nav="home">Overview</a><a href="#/sources" data-nav="sources">Sources</a></nav>
+  <div class="sp"></div>
+  <button class="iconbtn" id="theme" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+<main id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => /^https?:\/\//i.test(u || "") ? esc(u) : "#";
+const fmt = n => Number(n || 0).toLocaleString();
+const pct = m => m == null ? "n/a" : (m > 0 ? "+" : "") + Math.round(m * 100) + "%";
+const when = iso => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString([], {dateStyle:"medium", timeStyle:"short"}); };
+const ago = t => { const s = (Date.now()/1000 - t); return s < 60 ? "just now" : s < 3600 ? Math.round(s/60)+" min ago" : Math.round(s/3600)+" h ago"; };
+const TOKEN_KEY = "demand.token";
+function token(){ try { return localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; } }
+async function api(path, opts = {}) {
+  opts.headers = Object.assign({"Content-Type": "application/json"}, opts.headers || {});
+  if (token()) opts.headers["X-Token"] = token();
+  const r = await fetch(path, opts);
+  if (r.status === 401) {
+    const t = prompt("This dashboard requires an access token (DEMAND_DASHBOARD_TOKEN):");
+    if (t) { try { localStorage.setItem(TOKEN_KEY, t); } catch {} return api(path, opts); }
+  }
+  const ct = r.headers.get("content-type") || "";
+  const body = ct.includes("json") ? await r.json() : await r.text();
+  if (!r.ok) throw new Error(body.error || r.statusText);
+  return body;
+}
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 2200); }
+const gradeHtml = g => `<span class="grade ${esc(g)}"><i></i>${esc(g)}</span>`;
+const scoreBar = s => `<div class="scorebar"><div class="t"><div class="f" style="width:${Math.max(0, Math.min(100, s))}%"></div></div><b>${Number(s).toFixed(0)}</b></div>`;
+
+/* theme */
+(function(){
+  let t = null; try { t = localStorage.getItem("demand.theme"); } catch {}
+  if (t) document.documentElement.dataset.theme = t;
+  $("#theme").onclick = () => {
+    const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("demand.theme", next); } catch {}
+    route();
+  };
+})();
+
+/* ---------- line chart with crosshair tooltip ---------- */
+function lineChart(el, points, {yLabel = "", yMax = null, fmtX = x => x, fmtY = y => y} = {}) {
+  if (!points || points.length < 2) { el.innerHTML = `<p class="muted small">Not enough data.</p>`; return; }
+  const W = 640, H = 180, P = {l: 34, r: 10, t: 10, b: 24};
+  const max = (yMax ?? Math.max(...points.map(p => p.y))) || 1;
+  const x = i => P.l + i * (W - P.l - P.r) / (points.length - 1);
+  const y = v => P.t + (1 - v / max) * (H - P.t - P.b);
+  const path = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.y).toFixed(1)}`).join("");
+  const ticks = [0, max / 2, max];
+  const xt = [0, Math.floor((points.length - 1) / 2), points.length - 1];
+  el.innerHTML = `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(yLabel)}">
+    ${ticks.map(t => `<line x1="${P.l}" x2="${W - P.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>
+      <text x="${P.l - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(t)}</text>`).join("")}
+    <line x1="${P.l}" x2="${W - P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--axis)"/>
+    ${xt.map(i => `<text x="${x(i)}" y="${H - 6}" text-anchor="${i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"}" font-size="11" fill="var(--muted)">${esc(fmtX(points[i].x))}</text>`).join("")}
+    <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    <line class="xh" y1="${P.t}" y2="${H - P.b}" stroke="var(--axis)" stroke-dasharray="3 3" visibility="hidden"/>
+    <circle class="dot" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>
+    <rect class="hit" x="${P.l}" y="0" width="${W - P.l - P.r}" height="${H}" fill="transparent"/>
+  </svg><div class="tip"></div></div>`;
+  const svg = $("svg", el), tip = $(".tip", el), xh = $(".xh", el), dot = $(".dot", el);
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * W / r.width;
+    const i = Math.max(0, Math.min(points.length - 1, Math.round((sx - P.l) / ((W - P.l - P.r) / (points.length - 1)))));
+    const px = x(i), py = y(points[i].y);
+    xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", px); dot.setAttribute("cy", py); dot.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b>${esc(fmtY(points[i].y))}</b> <span class="muted">${esc(fmtX(points[i].x))}</span>`;
+    tip.style.display = "block";
+    const left = px * r.width / W;
+    tip.style.left = Math.min(r.width - tip.offsetWidth, Math.max(0, left - tip.offsetWidth / 2)) + "px";
+    tip.style.top = Math.max(0, py * r.height / H - 38) + "px";
+  };
+  $(".hit", el).addEventListener("pointermove", move);
+  $(".hit", el).addEventListener("pointerleave", () => { tip.style.display = "none"; xh.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); });
+}
+
+/* ---------- views ---------- */
+let pollTimer = null;
+async function viewHome() {
+  const app = $("#app");
+  app.innerHTML = `<div class="hdr"><div><h1>Demand overview</h1><p class="sub">Every niche you've scanned, ranked by its latest demand score.</p></div></div>
+  <div class="card" style="margin-top:16px">
+    <h2>New scan</h2>
+    <form class="form" id="scanForm" autocomplete="off">
+      <input type="text" id="niche" placeholder="Niche to scan, e.g. meal prep for diabetics" maxlength="120" required>
+      <label class="ck"><input type="checkbox" id="deep"> Deep</label>
+      <select id="llm" title="LLM synthesis"><option value="none">No LLM</option><option value="hermes">Hermes / OpenAI-compatible</option><option value="anthropic">Claude</option></select>
+      <button class="btn" id="go">Scan</button>
+    </form>
+    <details class="adv"><summary>Sources</summary><div class="srcgrid" id="srcs"><span class="muted small">Loading…</span></div></details>
+    <div id="jobs"></div>
+  </div>
+  <div class="row kpis" id="kpis"></div>
+  <div class="card"><h2>Niche leaderboard</h2><div class="tw" id="board"><p class="muted">Loading…</p></div></div>`;
+
+  api("/api/sources").then(src => {
+    $("#srcs").innerHTML = src.map(s => `<label class="ck" title="${esc(s.description)}${s.note ? " — " + esc(s.note) : ""}">
+      <input type="checkbox" name="src" value="${esc(s.name)}" ${s.enabled ? "checked" : "disabled"}> ${esc(s.name)}</label>`).join("");
+  }).catch(() => { $("#srcs").textContent = "Could not load sources."; });
+
+  $("#scanForm").onsubmit = async ev => {
+    ev.preventDefault();
+    const niche = $("#niche").value.trim(); if (!niche) return;
+    const boxes = [...document.querySelectorAll("input[name=src]")];
+    const chosen = boxes.filter(b => b.checked && !b.disabled).map(b => b.value);
+    const all = boxes.filter(b => !b.disabled).length;
+    $("#go").disabled = true;
+    try {
+      await api("/api/scans", {method: "POST", body: JSON.stringify({niche, deep: $("#deep").checked, llm: $("#llm").value,
+        sources: chosen.length === all ? [] : chosen})});
+      $("#niche").value = ""; toast("Scan queued"); refreshJobs();
+    } catch (e) { toast("Error: " + e.message); }
+    $("#go").disabled = false;
+  };
+
+  const scans = await api("/api/scans");
+  const latest = {};
+  for (const s of scans) { const k = s.niche.toLowerCase(); if (!latest[k]) latest[k] = s; }
+  const niches = Object.values(latest).sort((a, b) => b.score - a.score);
+  const best = niches[0];
+  $("#kpis").innerHTML = [
+    ["Niches scanned", niches.length, `${scans.length} scans total`],
+    ["Top niche", best ? Number(best.score).toFixed(0) : "–", best ? esc(best.niche) : "Run your first scan"],
+    ["Strong pain points", niches.reduce((a, s) => a + s.hot_pain_points, 0), "score ≥ 60 (latest scans)"],
+    ["Willingness to pay", niches.reduce((a, s) => a + s.wtp_signals, 0), "signals across niches"],
+  ].map(([l, v, s]) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+
+  $("#board").innerHTML = niches.length ? `<table>
+    <tr><th>#</th><th>Niche</th><th>Demand</th><th>Grade</th><th>Top pain point</th><th>Signals</th><th>WTP</th><th>Trend</th><th>Scanned</th></tr>
+    ${niches.map((s, i) => `<tr class="click" data-id="${esc(s.id)}">
+      <td class="muted">${i + 1}</td><td><b>${esc(s.niche)}</b></td><td>${scoreBar(s.score)}</td><td>${gradeHtml(s.grade)}</td>
+      <td class="small">${esc(s.top_pain)} <span class="muted">(${Number(s.top_pain_score).toFixed(0)})</span></td>
+      <td class="small">${fmt(s.signals_total)}<br><span class="muted">${fmt(s.signals_with_pain)} painful</span></td>
+      <td>${fmt(s.wtp_signals)}</td><td>${pct(s.trend_momentum)}</td><td class="small muted">${esc(when(s.generated_at))}</td></tr>`).join("")}
+  </table>` : `<div class="empty"><p><b>No scans yet.</b></p><p>Type a niche above and press <b>Scan</b>, or run <code>python -m demand_scanner scan "your niche"</code>.</p></div>`;
+  document.querySelectorAll("#board tr.click").forEach(tr => tr.onclick = () => location.hash = "#/scan/" + tr.dataset.id);
+  refreshJobs();
+}
+
+async function refreshJobs() {
+  clearTimeout(pollTimer);
+  const box = $("#jobs"); if (!box) return;
+  let jobs = [];
+  try { jobs = await api("/api/jobs"); } catch { return; }
+  const recent = jobs.filter(j => j.status === "running" || j.status === "queued" || (Date.now()/1000 - (j.finished || 0) < 900));
+  box.innerHTML = recent.map(j => `<div class="job">
+    <div><span class="status ${esc(j.status)}">${esc(j.status.toUpperCase())}</span> <b>${esc(j.niche)}</b>
+      <span class="muted small">${j.options.deep ? "deep · " : ""}${esc(ago(j.created))}</span>
+      ${j.scan_id ? ` · <a href="#/scan/${esc(j.scan_id)}">Open results →</a>` : ""}
+      ${j.error ? ` · <span class="status failed">${esc(j.error)}</span>` : ""}</div>
+    ${j.status === "running" || j.status === "failed" ? `<pre>${esc(j.log.slice(-14).join("\n"))}</pre>` : ""}
+  </div>`).join("");
+  const active = recent.some(j => j.status === "running" || j.status === "queued");
+  const justDone = recent.some(j => j.status === "done" && !refreshJobs.seen?.has(j.id));
+  refreshJobs.seen = new Set(recent.filter(j => j.status === "done").map(j => j.id));
+  if (justDone && refreshJobs.primed) { viewHome(); return; }
+  refreshJobs.primed = true;
+  if (active) pollTimer = setTimeout(refreshJobs, 1500);
+}
+
+async function viewScan(id) {
+  const app = $("#app");
+  app.innerHTML = `<p class="muted">Loading…</p>`;
+  let d;
+  try { d = await api("/api/scans/" + encodeURIComponent(id)); }
+  catch (e) { app.innerHTML = `<div class="empty">Scan not found. <a href="#/">Back to overview</a></div>`; return; }
+  const s = d.summary || {}, pts = d.pain_points || [];
+  const solTypes = [...new Set(pts.flatMap(p => (p.solutions || []).slice(0, 1).map(x => x.type)))].sort();
+  const srcNames = [...new Set(pts.flatMap(p => p.sources || []))].sort();
+  const failed = (d.sources || []).filter(x => !x.ok);
+  app.innerHTML = `
+  <div class="hdr"><div><a href="#/" class="small">← Overview</a><h1>${esc(d.niche)}</h1>
+    <p class="sub">Scanned ${esc(when(d.generated_at))} · keywords: ${esc((d.keywords || []).join(", "))}</p></div>
+    <div class="actions"><a class="btn ghost sm" href="/reports/${esc(d.id)}/report.html" target="_blank" rel="noopener">Full report</a>
+    <a class="btn ghost sm" href="/reports/${esc(d.id)}/report.json" target="_blank" rel="noopener">JSON</a>
+    <button class="btn ghost sm" id="rescan">Re-scan</button><button class="btn ghost sm" id="del">Delete</button></div></div>
+  ${d.llm_summary ? `<p class="lede">${esc(d.llm_summary)}</p>` : ""}
+  <div class="row kpis">
+    <div class="card kpi"><div class="l">Demand score</div><div class="v">${Number(s.score).toFixed(0)}<span class="muted" style="font-size:15px">/100</span></div><div class="s">${gradeHtml(s.grade)}</div></div>
+    <div class="card kpi"><div class="l">Signals</div><div class="v">${fmt(s.signals_total)}</div><div class="s">${fmt(s.signals_with_pain)} with pain language</div></div>
+    <div class="card kpi"><div class="l">Pain points</div><div class="v">${fmt(s.pain_points)}</div><div class="s">${pts.filter(p => p.score >= 60).length} scoring ≥ 60</div></div>
+    <div class="card kpi"><div class="l">Willingness to pay</div><div class="v">${fmt(s.wtp_signals)}</div><div class="s">signals</div></div>
+    <div class="card kpi"><div class="l">Trend momentum</div><div class="v">${pct(s.trend_momentum)}</div><div class="s">${s.trend_momentum == null ? "low search volume" : "last quarter vs prior 9 months"}</div></div>
+  </div>
+  <div class="row two">
+    <div class="card"><h2>Google Trends interest · 5 years</h2><div id="trend"></div></div>
+    <div class="card"><h2>Demand score history</h2><div id="hist"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2>Pain points</h2>
+    <div class="filters">
+      <input type="search" id="q" placeholder="Filter pain points…">
+      <select id="fsrc"><option value="">All sources</option>${srcNames.map(n => `<option>${esc(n)}</option>`).join("")}</select>
+      <select id="fsol"><option value="">All solution types</option>${solTypes.map(n => `<option>${esc(n)}</option>`).join("")}</select>
+      <select id="fmin"><option value="0">Any score</option><option value="30">≥ 30</option><option value="45">≥ 45</option><option value="60">≥ 60</option></select>
+    </div>
+    <div class="tw"><table id="pp"></table></div>
+  </div>
+  <div class="row two" style="margin-top:14px">
+    <div class="card"><h2>Search demand</h2><div id="sd"></div></div>
+    <div class="card"><h2>Sources</h2><div class="tw"><table>
+      <tr><th>Source</th><th>Status</th><th>Signals</th></tr>
+      ${(d.sources || []).map(x => `<tr><td>${esc(x.name)}</td><td class="small ${x.ok && !x.skipped ? "" : "muted"}" title="${esc(x.error)}">${x.skipped ? "skipped" : x.ok ? "ok" : "failed"}</td><td>${fmt(x.signals)}</td></tr>`).join("")}
+    </table></div>${failed.length ? `<p class="small muted">Hover a status to see why a source failed. Missing sources lower confidence.</p>` : ""}</div>
+  </div>`;
+
+  const series = (d.trend && d.trend.series) || [];
+  const now = new Date(d.generated_at || Date.now());
+  lineChart($("#trend"), series.map((v, i) => ({x: new Date(now - (series.length - 1 - i) * 7 * 864e5), y: v})),
+    {yLabel: "Google Trends interest", yMax: 100, fmtX: x => x.toLocaleDateString([], {year: "numeric", month: "short"}), fmtY: y => y + " / 100"});
+  const hist = d.history || [];
+  if (hist.length >= 2) lineChart($("#hist"), hist.map(h => ({x: new Date(h.generated_at), y: h.score})),
+    {yLabel: "Demand score over time", yMax: 100, fmtX: x => x.toLocaleDateString([], {month: "short", day: "numeric"}), fmtY: y => "score " + Number(y).toFixed(0)});
+  else $("#hist").innerHTML = `<p class="muted small">Scan this niche again later (or schedule it with Hermes) to track how demand changes.</p>
+    ${hist.length ? `<div class="kpi"><div class="v">${Number(hist[0].score).toFixed(0)}</div><div class="s">${esc(when(hist[0].generated_at))}</div></div>` : ""}`;
+
+  const q = (d.search_demand || []).slice(0, 50);
+  $("#sd").innerHTML = q.length ? q.map(x => `<a class="chip ${x.pain_tags && x.pain_tags.length ? "a" : ""}" href="${safeUrl(x.url)}" target="_blank" rel="noopener" title="${esc((x.pain_tags || []).join(", "))}">${esc(x.query)}</a>`).join("")
+    : `<p class="muted small">No autocomplete / Trends queries in this scan.</p>`;
+
+  const COMP = ["volume", "engagement", "intensity", "wtp", "breadth", "recency", "gap", "momentum"];
+  const open = new Set();
+  const renderTable = () => {
+    const term = $("#q").value.toLowerCase(), fs = $("#fsrc").value, fo = $("#fsol").value, fm = +$("#fmin").value;
+    const rows = pts.map((p, i) => ({p, rank: i + 1})).filter(({p}) =>
+      p.score >= fm && (!fs || (p.sources || []).includes(fs)) && (!fo || (p.solutions || [])[0]?.type === fo) &&
+      (!term || (p.label + " " + (p.keywords || []).join(" ") + " " + (p.llm?.problem_statement || "")).toLowerCase().includes(term)));
+    $("#pp").innerHTML = `<tr><th>#</th><th>Pain point</th><th>Demand</th><th>Signals</th><th>Sources</th><th>Best fit</th></tr>` +
+      (rows.length ? rows.map(({p, rank}) => {
+        const best = p.llm?.solutions?.[0]?.type || p.solutions?.[0]?.type || "–";
+        const main = `<tr class="click" data-rank="${rank}"><td class="muted">${rank}</td>
+          <td><b>${esc(p.label)}</b>${p.llm?.problem_statement ? `<div class="small muted">${esc(p.llm.problem_statement)}</div>` : ""}</td>
+          <td>${scoreBar(p.score)}</td><td>${fmt(p.signal_count)}</td><td class="small">${esc((p.sources || []).join(", "))}</td><td><span class="chip">${esc(best)}</span></td></tr>`;
+        return main + (open.has(rank) ? detailRow(p, rank) : "");
+      }).join("") : `<tr><td colspan="6" class="muted">No pain points match these filters.</td></tr>`);
+    document.querySelectorAll("#pp tr.click").forEach(tr => tr.onclick = () => {
+      const r = +tr.dataset.rank; open.has(r) ? open.delete(r) : open.add(r); renderTable();
+    });
+    document.querySelectorAll("[data-brief]").forEach(b => b.onclick = async ev => {
+      ev.stopPropagation();
+      try {
+        const txt = await api(`/api/scans/${encodeURIComponent(d.id)}/briefs/${b.dataset.brief}`);
+        if (b.dataset.mode === "copy") { await navigator.clipboard.writeText(txt); toast("Build brief copied — paste it into Hermes or Claude Code"); }
+        else { const w = window.open("", "_blank"); if (w) { w.document.title = "Build brief"; const pre = w.document.createElement("pre"); pre.style.cssText = "white-space:pre-wrap;font:14px/1.5 ui-monospace,Consolas,monospace;padding:16px;max-width:900px;margin:auto"; pre.textContent = txt; w.document.body.appendChild(pre); } }
+      } catch (e) { toast(e.message.includes("not found") ? "No brief for this rank (only the top 10 get briefs)" : "Error: " + e.message); }
+    });
+  };
+  const detailRow = (p, rank) => {
+    const c = p.components || {};
+    const sols = p.llm?.solutions?.length ? p.llm.solutions.map(x => `<div class="sol"><b>${esc(x.name)}</b>
+        <span class="small muted">${esc(x.type)} · ${esc(x.build_effort || "")}</span><div>${esc(x.one_liner)}</div>
+        <ul class="small">${(x.mvp_features || []).map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+        <div class="small muted">Monetization: ${esc(x.monetization)}</div></div>`).join("")
+      : (p.solutions || []).map(x => `<span class="chip">${esc(x.type)} · fit ${x.fit}</span>`).join("");
+    const quotes = (p.evidence || []).slice(0, 6).map(e => `<div class="quote">${esc(((e.title ? e.title + " — " : "") + (e.text || "")).slice(0, 420))}
+        <div class="m">${esc(e.source)} · ${esc(e.kind)} · ${fmt(e.score)} pts${e.comments ? " · " + fmt(e.comments) + " comments" : ""} · <a href="${safeUrl(e.url)}" target="_blank" rel="noopener">source ↗</a></div></div>`).join("");
+    return `<tr class="pp-detail"><td></td><td colspan="5"><div class="detail-grid">
+      <div>${COMP.map(k => `<div class="comp"><span>${k}</span><div class="t"><div class="f" style="width:${Math.round((c[k] || 0) * 100)}%"></div></div><span>${(c[k] || 0).toFixed(2)}</span></div>`).join("")}
+        <div style="margin-top:10px">${Object.entries(p.tags || {}).map(([k, v]) => `<span class="chip">${esc(k)} ${v}</span>`).join("")}</div>
+        <div class="actions" style="margin-top:12px">${rank <= 10 ? `<button class="btn sm" data-brief="${rank}" data-mode="copy">Copy build brief</button>
+          <button class="btn ghost sm" data-brief="${rank}" data-mode="view">View</button>` : ""}</div></div>
+      <div><div class="small muted">Evidence</div>${quotes || `<p class="muted small">No quotes.</p>`}
+        <div class="small muted" style="margin-top:10px">Solutions</div>${sols}</div></div></td></tr>`;
+  };
+  ["q", "fsrc", "fsol", "fmin"].forEach(k => $("#" + k).addEventListener("input", renderTable));
+  renderTable();
+
+  $("#rescan").onclick = async () => {
+    try { await api("/api/scans", {method: "POST", body: JSON.stringify({niche: d.niche})}); toast("Re-scan queued"); location.hash = "#/"; }
+    catch (e) { toast("Error: " + e.message); }
+  };
+  $("#del").onclick = async () => {
+    if (!confirm(`Delete this scan of "${d.niche}"?`)) return;
+    try { await api("/api/scans/" + encodeURIComponent(d.id), {method: "DELETE"}); location.hash = "#/"; }
+    catch (e) { toast("Error: " + e.message); }
+  };
+}
+
+async function viewSources() {
+  const app = $("#app");
+  app.innerHTML = `<h1>Data sources</h1><p class="sub">Keys go in the <code>.env</code> file in the project folder. Restart the dashboard after editing it.</p>
+    <div class="card" style="margin-top:16px"><div class="tw" id="srct"><p class="muted">Loading…</p></div></div>`;
+  const src = await api("/api/sources");
+  $("#srct").innerHTML = `<table><tr><th>Source</th><th>Status</th><th>What it provides</th><th>Setup</th></tr>
+    ${src.map(s => `<tr><td><b>${esc(s.name)}</b></td><td>${s.enabled ? `<span class="status done">ENABLED</span>` : `<span class="status muted">OFF</span>`}</td>
+      <td class="small">${esc(s.description)}</td><td class="small muted">${esc(s.note)}</td></tr>`).join("")}</table>`;
+}
+
+function route() {
+  clearTimeout(pollTimer);
+  const h = location.hash.replace(/^#/, "") || "/";
+  document.querySelectorAll("nav a").forEach(a => a.classList.toggle("on",
+    (a.dataset.nav === "sources" && h.startsWith("/sources")) || (a.dataset.nav === "home" && !h.startsWith("/sources"))));
+  const m = h.match(/^\/scan\/([a-z0-9-]+)$/);
+  (m ? viewScan(m[1]) : h.startsWith("/sources") ? viewSources() : viewHome()).catch(e => {
+    $("#app").innerHTML = `<div class="empty">Something went wrong: ${esc(e.message)}</div>`;
+  });
+  window.scrollTo(0, 0);
+}
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>

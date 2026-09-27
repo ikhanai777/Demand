@@ -17,12 +17,13 @@ def write_all(result: ScanResult, out_dir: str | Path = "reports", top: int = 25
     folder = Path(out_dir) / f"{slugify(result.niche)}-{stamp}"
     (folder / "briefs").mkdir(parents=True, exist_ok=True)
     data = result.to_dict(top=top)
-    (folder / "report.json").write_text(json.dumps(data, indent=2, ensure_ascii=False))
-    (folder / "report.md").write_text(to_markdown(result, top))
-    (folder / "report.html").write_text(to_html(result, top))
+    (folder / "report.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    (folder / "report.md").write_text(to_markdown(result, top), encoding="utf-8")
+    (folder / "report.html").write_text(to_html(result, top), encoding="utf-8")
     for rank, p in enumerate(result.points[:briefs], 1):
         name = p.llm.get("name") or p.label
-        (folder / "briefs" / f"{rank:02d}-{slugify(name, 40)}.md").write_text(build_brief(p, result.niche, rank))
+        brief = folder / "briefs" / f"{rank:02d}-{slugify(name, 40)}.md"
+        brief.write_text(build_brief(p, result.niche, rank), encoding="utf-8")
     return folder
 
 

@@ -21,5 +21,8 @@ demand-scanner = "demand_scanner.cli:main"
 [tool.setuptools.packages.find]
 include = ["demand_scanner*"]
 
+[tool.setuptools.package-data]
+demand_scanner = ["dashboard/static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

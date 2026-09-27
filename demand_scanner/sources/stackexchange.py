@@ -8,8 +8,8 @@ from ..text import clean
 from .base import ScanContext, Source
 
 API = "https://api.stackexchange.com/2.3/search/advanced"
-DEFAULT_SITES = ["softwarerecs", "webapps", "superuser", "android", "stackoverflow", "money", "workplace",
-                 "freelancing", "ux"]
+DEFAULT_SITES = ["softwarerecs", "webapps", "superuser", "android", "money", "workplace", "diy", "pets",
+                 "freelancing", "ux", "cooking", "fitness", "parenting", "stackoverflow"]
 
 
 class StackExchange(Source):

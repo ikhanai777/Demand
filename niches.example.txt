@@ -1,0 +1,5 @@
+# Watchlist for scheduled-scan.ps1 / `demand_scanner compare --file`. One niche per line.
+meal prep for diabetics
+freelance invoicing
+dog training
+small landlord property management

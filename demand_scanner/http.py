@@ -51,7 +51,7 @@ class Http:
         p = self._cache_path(key)
         if p.exists() and time.time() - p.stat().st_mtime < CACHE_TTL:
             try:
-                return json.loads(p.read_text())
+                return json.loads(p.read_text(encoding="utf-8"))
             except (OSError, ValueError):
                 return None
         return None
@@ -59,7 +59,7 @@ class Http:
     def _cache_put(self, key: str, value: Any) -> None:
         if self.use_cache:
             try:
-                self._cache_path(key).write_text(json.dumps(value))
+                self._cache_path(key).write_text(json.dumps(value), encoding="utf-8")
             except (OSError, TypeError):
                 pass
 

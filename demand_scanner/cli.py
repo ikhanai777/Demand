@@ -17,15 +17,25 @@ from .http import Http
 from .sources import REGISTRY
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
 def _load_dotenv() -> None:
-    p = Path(".env")
-    if not p.exists():
+    """Load .env from the current directory, falling back to the project root."""
+    p = next((c for c in (Path(".env"), REPO_ROOT / ".env") if c.is_file()), None)
+    if p is None:
         return
-    for line in p.read_text().splitlines():
+    for line in p.read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            v = v.strip()
+            if v[:1] in ('"', "'") and v[:1] in v[1:]:
+                v = v[1:v.index(v[0], 1)]          # quoted value: keep '#' inside quotes
+            else:
+                v = v.split(" #", 1)[0].strip()   # drop inline comments
+            if v:
+                os.environ.setdefault(k.strip().removeprefix("export "), v)
 
 
 def _scan_kwargs(a: argparse.Namespace) -> dict:
@@ -62,7 +72,7 @@ def cmd_compare(a: argparse.Namespace) -> int:
 
     niches = list(a.niches)
     if a.file:
-        niches += [n.strip() for n in Path(a.file).read_text().splitlines() if n.strip() and not n.startswith("#")]
+        niches += [n.strip() for n in Path(a.file).read_text(encoding="utf-8").splitlines() if n.strip() and not n.startswith("#")]
     rows = []
     for n in niches:
         r = run_scan(n, **_scan_kwargs(a))
@@ -79,7 +89,7 @@ def cmd_compare(a: argparse.Namespace) -> int:
                      f"{s['wtp_signals']} | {'n/a' if mom is None else f'{mom:+.0%}'} | {top} |")
     out = Path(a.out) / "leaderboard.md"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\n".join(lines) + "\n")
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
     print(f"\nSaved {out}")
     return 0
@@ -101,11 +111,24 @@ def cmd_brief(a: argparse.Namespace) -> int:
     if not files:
         print(f"No brief #{a.rank} in {folder}/briefs", file=sys.stderr)
         return 1
-    print(files[0].read_text())
+    print(files[0].read_text(encoding="utf-8"))
+    return 0
+
+
+def cmd_dashboard(a: argparse.Namespace) -> int:
+    from .dashboard import serve
+
+    serve(host=a.host, port=a.port, reports_dir=a.out, open_browser=a.open)
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Windows consoles default to cp1252; never crash on a non-ASCII niche or quote.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     _load_dotenv()
     ap = argparse.ArgumentParser(prog="demand-scanner", description="Find and score pain points in any niche.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -122,7 +145,8 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--model", help="override LLM model id")
         p.add_argument("--top", type=int, default=25, help="pain points to keep in the report")
         p.add_argument("--briefs", type=int, default=10, help="build briefs to generate")
-        p.add_argument("--out", default="reports", help="output directory")
+        p.add_argument("--out", default=os.environ.get("DEMAND_SCANNER_REPORTS", "reports"),
+                       help="output directory (env DEMAND_SCANNER_REPORTS)")
         p.add_argument("--no-cache", action="store_true", help="ignore the 6h HTTP cache")
 
     p = sub.add_parser("scan", help="scan one niche")
@@ -140,6 +164,15 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("sources", help="list data sources and configuration status")
     p.set_defaults(fn=cmd_sources)
+
+    p = sub.add_parser("dashboard", help="run the local web dashboard")
+    p.add_argument("--host", default=os.environ.get("DEMAND_DASHBOARD_HOST", "127.0.0.1"),
+                   help="bind address (default 127.0.0.1 = this computer only)")
+    p.add_argument("--port", type=int, default=int(os.environ.get("DEMAND_DASHBOARD_PORT", 8765)))
+    p.add_argument("--out", default=os.environ.get("DEMAND_SCANNER_REPORTS", "reports"),
+                   help="reports directory to serve and write to")
+    p.add_argument("--open", action="store_true", help="open the dashboard in the default browser")
+    p.set_defaults(fn=cmd_dashboard)
 
     p = sub.add_parser("brief", help="print a build brief from a finished scan")
     p.add_argument("report", help="path to report.json or the scan folder")

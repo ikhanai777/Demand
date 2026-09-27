@@ -35,7 +35,8 @@ def clean(text: str) -> str:
 def stem(word: str) -> str:
     """Very light suffix stripping so 'invoices'/'invoicing'/'invoice' collide."""
     for suf in ("ations", "ation", "ings", "ing", "ies", "ers", "er", "es", "ed", "s"):
-        if len(word) > len(suf) + 3 and word.endswith(suf):
+        min_len = 3 if suf == "s" else len(suf) + 3   # "dogs" -> "dog", but keep "gas", "less"
+        if len(word) > min_len and word.endswith(suf) and not (suf == "s" and word.endswith("ss")):
             word = word[: -len(suf)] + ("y" if suf == "ies" else "")
             break
     if len(word) > 4 and word.endswith("e"):
@@ -60,12 +61,21 @@ def niche_keywords(niche: str) -> list[str]:
 
 
 def mentions_niche(text: str, keywords: list[str], min_hits: int | None = None) -> bool:
-    """True if the text is about the niche (fuzzy: shared 5-char stems)."""
+    """True if the text is about the niche.
+
+    Matching is fuzzy (shared stem prefix: "prep" ~ "preparing", "dog" ~ "dogs"). Two- and
+    three-word niches need every word ("dog training" must not match ML model training);
+    longer niches need all but one.
+    """
     if not keywords:
         return True
-    body = {stem(t)[:5] for t in tokens(text)}
-    hits = sum(1 for k in keywords if stem(k)[:5] in body)
-    need = min_hits if min_hits is not None else (1 if len(keywords) <= 2 else 2)
+    body = {stem(t) for t in tokens(text)}
+    hits = 0
+    for k in keywords:
+        ks = stem(k)[:5]
+        if ks in body or (len(ks) >= 4 and any(b.startswith(ks) for b in body)):
+            hits += 1
+    need = min_hits if min_hits is not None else (len(keywords) if len(keywords) <= 3 else len(keywords) - 1)
     return hits >= min(need, len(keywords))
 
 

@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from . import pain as pain_mod
 from .cluster import cluster
@@ -55,7 +55,8 @@ class ScanResult:
 def run_scan(niche: str, *, sources: list[str] | None = None, keywords: list[str] | None = None,
              limit: int = 60, days: int = 730, deep: bool = False, geo: str = "US", use_cache: bool = True,
              llm_provider: str | None = None, llm_model: str | None = None, top: int = 25,
-             min_signals: int = 2) -> ScanResult:
+             min_signals: int = 2, progress: Callable[[str], None] | None = None) -> ScanResult:
+    say = progress or log
     kw = keywords or niche_keywords(niche)
     ctx = ScanContext(niche=niche, keywords=kw, limit=limit, days=days, deep=deep, geo=geo)
     http = Http(use_cache=use_cache)
@@ -75,7 +76,7 @@ def run_scan(niche: str, *, sources: list[str] | None = None, keywords: list[str
             continue
         runnable.append(src)
 
-    log(f"Scanning '{niche}' across {len(runnable)} sources: {', '.join(s.name for s in runnable)}")
+    say(f"Scanning '{niche}' across {len(runnable)} sources: {', '.join(s.name for s in runnable)}")
 
     def _run(src) -> SourceResult:
         t0 = time.time()
@@ -94,7 +95,7 @@ def run_scan(niche: str, *, sources: list[str] | None = None, keywords: list[str
         for fut in as_completed(futures):
             r = fut.result()
             status = f"{len(r.signals)} signals" if r.ok else f"FAILED ({r.error})"
-            log(f"  - {r.name:<15} {status} [{r.elapsed:.1f}s]")
+            say(f"  - {r.name:<15} {status} [{r.elapsed:.1f}s]")
             results.append(r)
 
     # Dedupe + relevance filter
@@ -124,12 +125,12 @@ def run_scan(niche: str, *, sources: list[str] | None = None, keywords: list[str
 
     llm_result: dict[str, Any] = {}
     if llm_provider:
-        log(f"Synthesizing top {min(top, len(points))} pain points with {llm_provider}...")
+        say(f"Synthesizing top {min(top, len(points))} pain points with {llm_provider}...")
         try:
             from .llm import synthesize
             llm_result = synthesize(niche, points[:top], llm_provider, llm_model)
         except Exception as exc:
-            log(f"  LLM synthesis failed: {type(exc).__name__}: {exc}")
+            say(f"  LLM synthesis failed: {type(exc).__name__}: {exc}")
             llm_result = {"error": str(exc)}
 
     summary = niche_score(points, signals, momentum, sources_ok)

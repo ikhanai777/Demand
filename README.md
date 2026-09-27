@@ -18,6 +18,24 @@ meal prep: demand 68.5/100 (STRONG) - 115 pain points from 1546 signals
 Report: reports/meal-prep-20260927-2010/report.html
 ```
 
+## Windows 10 + Hermes Agent
+
+Double-click **`Install.bat`**, then **`Start-Dashboard.bat`**, or have Nous Hermes Agent do the whole
+deployment for you by following **[HERMES_DEPLOY.md](HERMES_DEPLOY.md)** (install, keys, dashboard,
+autostart, Hermes skill, weekly re-scans). The Windows scripts live in `scripts/windows/`.
+
+## Demand dashboard
+
+```bash
+python3 -m demand_scanner dashboard --open      # http://127.0.0.1:8765/
+```
+
+A local web app (Python standard library only, no extra installs): start scans and watch their live
+log, compare niches on a leaderboard, open any scan to see demand KPIs, the 5-year Google Trends
+curve, score history across re-scans, a filterable pain-point table with score breakdowns, real
+quotes and solution ideas, and copy build briefs with one click. It also has a JSON API
+(`/api/scans`, `/api/jobs`, ...) so agents can drive it; see [HERMES_DEPLOY.md](HERMES_DEPLOY.md#4-dashboard-http-api-for-hermes-and-scripts).
+
 ## How it works
 
 ```
@@ -125,6 +143,7 @@ the score), flags noise, and proposes named products with MVP features and monet
 Those go straight into the report and the build briefs.
 
 For Hermes Agent (or any agent that reads `SKILL.md` skills), use `skills/demand-scanner/SKILL.md`.
+On Windows, `scripts/windows/install.ps1` installs it into Hermes for you (`/demand-scanner`).
 
 ## Other commands
 
@@ -132,6 +151,9 @@ For Hermes Agent (or any agent that reads `SKILL.md` skills), use `skills/demand
 # Rank several niches against each other → reports/leaderboard.md
 python3 -m demand_scanner compare "meal prep" "pet grooming" "freelance invoicing"
 python3 -m demand_scanner compare --file niches.txt
+
+# Local dashboard
+python3 -m demand_scanner dashboard [--port 8765] [--open]
 
 # Options
 --deep            more queries, more comments/reviews, full autocomplete alphabet (slower)
