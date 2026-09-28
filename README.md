@@ -18,6 +18,16 @@ meal prep: demand 68.5/100 (STRONG) - 115 pain points from 1546 signals
 Report: reports/meal-prep-20260927-2010/report.html
 ```
 
+## Run it from Claude (Claude Desktop / Claude Code)
+
+The scanner ships an MCP server, so Claude can run scans for you: *"Scan the niche meal prep for
+diabetics and give me the top 5 opportunities."* On Windows, double-click **`Install.bat`**, then
+**`Connect-Claude.bat`**, and restart Claude Desktop. Full steps: **[CLAUDE_SETUP.md](CLAUDE_SETUP.md)**.
+
+Tools: `scan_niche`, `compare_niches`, `list_scans`, `get_scan`, `get_build_brief`, `list_sources`,
+plus a `find_opportunities` prompt. Elsewhere: `pip install -e ".[mcp]"` and
+`claude mcp add demand-scanner -- <path-to-python> -m demand_scanner mcp`.
+
 ## Windows 10 + Hermes Agent
 
 Double-click **`Install.bat`**, then **`Start-Dashboard.bat`**, or have Nous Hermes Agent do the whole
@@ -154,6 +164,9 @@ python3 -m demand_scanner compare --file niches.txt
 
 # Local dashboard
 python3 -m demand_scanner dashboard [--port 8765] [--open]
+
+# MCP server for Claude (needs: pip install -e ".[mcp]")
+python3 -m demand_scanner mcp
 
 # Options
 --deep            more queries, more comments/reviews, full autocomplete alphabet (slower)

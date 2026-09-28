@@ -65,7 +65,7 @@ if (-not (Test-Path $VenvPy)) {
 }
 Write-Step "Installing Python packages"
 & $VenvPy -m pip install --upgrade pip --quiet --disable-pip-version-check
-$extras = if ($Minimal) { "dev" } else { "dev,play,llm" }
+$extras = if ($Minimal) { "dev" } else { "dev,play,llm,mcp" }
 & $VenvPy -m pip install -e ".[$extras]" --quiet --disable-pip-version-check
 if ($LASTEXITCODE -ne 0) { throw "pip install failed" }
 Write-Ok "Packages installed ($extras)"

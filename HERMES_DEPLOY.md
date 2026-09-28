@@ -156,6 +156,13 @@ Tell the user:
 
 ---
 
+### Optional: also run it from Claude
+
+To use the same scanner from Claude Desktop or Claude Code, run
+`powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\Demand\scripts\windows\connect-claude.ps1"`
+(or double-click `Connect-Claude.bat`), then fully quit and reopen Claude Desktop. Hermes and Claude
+share the same scans and dashboard. See [CLAUDE_SETUP.md](CLAUDE_SETUP.md).
+
 ## 3. Using it day to day
 
 In Hermes:
@@ -187,6 +194,7 @@ From any terminal:
 | Re-scan the watchlist | `scheduled-scan.ps1"` (options: `-File other.txt`, `-Deep`) |
 | Update to the latest version | `update.ps1"` (git pull, reinstall, restart the dashboard if it was running) |
 | Autostart on / off | `autostart.ps1"` / `autostart.ps1" -Disable` |
+| Connect to Claude Desktop / Claude Code | `connect-claude.ps1"` (remove with `-Disable`) |
 
 Output of every scan: `reports\<niche>-<timestamp>\` containing `report.html`, `report.md`,
 `report.json`, and `briefs\01-*.md` … `briefs\10-*.md`.

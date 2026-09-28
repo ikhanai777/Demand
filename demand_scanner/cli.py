@@ -115,6 +115,16 @@ def cmd_brief(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp(a: argparse.Namespace) -> int:
+    try:
+        from .mcp_server import main as mcp_main
+    except ImportError as exc:
+        print(f"MCP support is not installed ({exc}). Run: pip install -e \".[mcp]\"", file=sys.stderr)
+        return 1
+    mcp_main()
+    return 0
+
+
 def cmd_dashboard(a: argparse.Namespace) -> int:
     from .dashboard import serve
 
@@ -173,6 +183,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="reports directory to serve and write to")
     p.add_argument("--open", action="store_true", help="open the dashboard in the default browser")
     p.set_defaults(fn=cmd_dashboard)
+
+    p = sub.add_parser("mcp", help="run the MCP server so Claude Desktop / Claude Code can use the scanner")
+    p.set_defaults(fn=cmd_mcp)
 
     p = sub.add_parser("brief", help="print a build brief from a finished scan")
     p.add_argument("report", help="path to report.json or the scan folder")
